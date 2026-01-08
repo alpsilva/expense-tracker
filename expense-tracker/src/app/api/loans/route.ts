@@ -2,13 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { loans, people, loanPayments } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 // GET /api/loans - List all loans
 export async function GET(request: NextRequest) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const searchParams = request.nextUrl.searchParams
   const activeOnly = searchParams.get('active') === 'true'
   const personId = searchParams.get('personId')
   const direction = searchParams.get('direction') as 'lent' | 'borrowed' | null
+
+  // Get all people for this user to filter loans
+  const userPeople = await db
+    .select({ id: people.id })
+    .from(people)
+    .where(eq(people.userId, userId))
+
+  const userPeopleIds = userPeople.map((p) => p.id)
+
+  if (userPeopleIds.length === 0) {
+    return NextResponse.json([])
+  }
 
   const allLoans = await db.query.loans.findMany({
     where: and(
@@ -25,8 +41,11 @@ export async function GET(request: NextRequest) {
     orderBy: [desc(loans.transactionDate)],
   })
 
+  // Filter to only loans belonging to this user's people
+  const userLoans = allLoans.filter((loan) => userPeopleIds.includes(loan.personId))
+
   // Enrich with computed fields
-  const enrichedLoans = allLoans.map((loan) => {
+  const enrichedLoans = userLoans.map((loan) => {
     const totalPaid = loan.payments.reduce(
       (sum, p) => sum + parseFloat(p.amount),
       0
@@ -43,6 +62,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/loans - Create new loan
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const body = await request.json()
 
   // Create person inline if needed
@@ -52,6 +74,7 @@ export async function POST(request: NextRequest) {
     const [person] = await db
       .insert(people)
       .values({
+        userId,
         name: body.personName,
         nickname: body.personNickname,
         email: body.personEmail,
@@ -60,6 +83,17 @@ export async function POST(request: NextRequest) {
       })
       .returning()
     personId = person.id
+  } else if (personId) {
+    // Verify person belongs to user
+    const [person] = await db
+      .select()
+      .from(people)
+      .where(and(eq(people.id, personId), eq(people.userId, userId)))
+      .limit(1)
+
+    if (!person) {
+      return NextResponse.json({ error: 'Pessoa não encontrada' }, { status: 404 })
+    }
   }
 
   const [loan] = await db

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/db'
-import { recurringExpenses, loans } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { recurringExpenses, loans, people } from '@/db/schema'
+import { eq, and } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 export async function GET() {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const now = new Date()
   const currentDay = now.getDate()
   const currentMonth = now.getMonth() + 1
@@ -14,7 +18,7 @@ export async function GET() {
   const activeExpenses = await db
     .select()
     .from(recurringExpenses)
-    .where(eq(recurringExpenses.isActive, true))
+    .where(and(eq(recurringExpenses.isActive, true), eq(recurringExpenses.userId, userId)))
 
   const monthlyExpenses = activeExpenses.filter((e) => e.recurrence === 'monthly')
   const yearlyExpenses = activeExpenses.filter((e) => e.recurrence === 'yearly')
@@ -43,6 +47,7 @@ export async function GET() {
   // LOANS
   // ============================================
   const allPeople = await db.query.people.findMany({
+    where: eq(people.userId, userId),
     with: {
       loans: {
         where: eq(loans.isSettled, false),
