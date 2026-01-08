@@ -1,0 +1,471 @@
+{
+  "info": {
+    "name": "Expense Tracker API",
+    "description": "API collection for the Expense Tracker application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dashboard"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "List All Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"]
+            }
+          }
+        },
+        {
+          "name": "List Active Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses?active=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"],
+              "query": [
+                { "key": "active", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Monthly Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses?recurrence=monthly",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"],
+              "query": [
+                { "key": "recurrence", "value": "monthly" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Yearly Expenses",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses?recurrence=yearly",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"],
+              "query": [
+                { "key": "recurrence", "value": "yearly" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Monthly Expense",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Netflix\",\n  \"description\": \"Streaming service subscription\",\n  \"amount\": 55.90,\n  \"currency\": \"BRL\",\n  \"category\": \"subscription\",\n  \"recurrence\": \"monthly\",\n  \"paymentMethod\": \"credit_card\",\n  \"dueDay\": 15,\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"notes\": \"Family plan\",\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Yearly Expense",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IPVA\",\n  \"description\": \"Vehicle tax\",\n  \"amount\": 1800.00,\n  \"currency\": \"BRL\",\n  \"category\": \"transport\",\n  \"recurrence\": \"yearly\",\n  \"paymentMethod\": \"boleto\",\n  \"dueDay\": 15,\n  \"dueMonth\": 1,\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Expense by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", ":id"],
+              "variable": [
+                { "key": "id", "value": "EXPENSE_ID_HERE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Expense",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", ":id"],
+              "variable": [
+                { "key": "id", "value": "EXPENSE_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Netflix Premium\",\n  \"amount\": 65.90,\n  \"isActive\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", ":id"],
+              "variable": [
+                { "key": "id", "value": "EXPENSE_ID_HERE" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "People",
+      "item": [
+        {
+          "name": "List All People",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/people",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "people"]
+            }
+          }
+        },
+        {
+          "name": "Create Person",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/people",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "people"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva\",\n  \"nickname\": \"João\",\n  \"email\": \"joao@email.com\",\n  \"phone\": \"(81) 99999-9999\",\n  \"relationship\": \"primo\",\n  \"notes\": \"Mora em Recife\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Person by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/people/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "people", ":id"],
+              "variable": [
+                { "key": "id", "value": "PERSON_ID_HERE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Person",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/people/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "people", ":id"],
+              "variable": [
+                { "key": "id", "value": "PERSON_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva Santos\",\n  \"phone\": \"(81) 98888-8888\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Person",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/people/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "people", ":id"],
+              "variable": [
+                { "key": "id", "value": "PERSON_ID_HERE" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loans",
+      "item": [
+        {
+          "name": "List All Loans",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"]
+            }
+          }
+        },
+        {
+          "name": "List Active Loans",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans?active=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"],
+              "query": [
+                { "key": "active", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Loans I Lent",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans?direction=lent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"],
+              "query": [
+                { "key": "direction", "value": "lent" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Loans I Borrowed",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans?direction=borrowed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"],
+              "query": [
+                { "key": "direction", "value": "borrowed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Loans by Person",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans?personId=PERSON_ID_HERE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"],
+              "query": [
+                { "key": "personId", "value": "PERSON_ID_HERE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Loan (Existing Person)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personId\": \"PERSON_ID_HERE\",\n  \"direction\": \"lent\",\n  \"amount\": 500.00,\n  \"currency\": \"BRL\",\n  \"reason\": \"Conserto do carro\",\n  \"transactionDate\": \"2024-01-15T00:00:00.000Z\",\n  \"expectedSettlement\": \"2024-03-15T00:00:00.000Z\",\n  \"notes\": \"Combinamos de pagar em 2 parcelas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Loan (New Person Inline)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans"]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personName\": \"Maria Santos\",\n  \"personNickname\": \"Maria\",\n  \"personRelationship\": \"colega de trabalho\",\n  \"direction\": \"borrowed\",\n  \"amount\": 200.00,\n  \"currency\": \"BRL\",\n  \"reason\": \"Almoço de emergência\",\n  \"transactionDate\": \"2024-01-20T00:00:00.000Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Loan by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", ":id"],
+              "variable": [
+                { "key": "id", "value": "LOAN_ID_HERE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Loan",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", ":id"],
+              "variable": [
+                { "key": "id", "value": "LOAN_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Atualizado: vai pagar semana que vem\",\n  \"expectedSettlement\": \"2024-02-01T00:00:00.000Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark Loan as Settled",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", ":id"],
+              "variable": [
+                { "key": "id", "value": "LOAN_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isSettled\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Loan",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", ":id"],
+              "variable": [
+                { "key": "id", "value": "LOAN_ID_HERE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Loan Payments",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/:id/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", ":id", "payments"],
+              "variable": [
+                { "key": "id", "value": "LOAN_ID_HERE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Record Loan Payment",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/loans/:id/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "loans", ":id", "payments"],
+              "variable": [
+                { "key": "id", "value": "LOAN_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.00,\n  \"paidAt\": \"2024-02-01T00:00:00.000Z\",\n  \"method\": \"pix\",\n  \"notes\": \"Primeira parcela\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
