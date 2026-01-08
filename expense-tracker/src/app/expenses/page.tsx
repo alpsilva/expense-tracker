@@ -1,14 +1,26 @@
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ExpensesSection } from '@/components/expenses/expenses-section'
 
 async function getExpenses() {
+  const cookieStore = await cookies()
+  const userId = cookieStore.get('userId')?.value
+
+  if (!userId) {
+    redirect('/login')
+  }
+
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : 'http://localhost:3000'
 
   const res = await fetch(`${baseUrl}/api/expenses`, {
     cache: 'no-store',
+    headers: {
+      Cookie: `userId=${userId}`,
+    },
   })
 
   if (!res.ok) {
