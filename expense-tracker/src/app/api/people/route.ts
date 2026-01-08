@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { people } from '@/db/schema'
-import { desc } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 // GET /api/people - List all people with their balances
 export async function GET() {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   // Get all people with their loans and payments
   const allPeople = await db.query.people.findMany({
+    where: eq(people.userId, userId),
     with: {
       loans: {
         with: {
@@ -73,11 +78,15 @@ export async function GET() {
 
 // POST /api/people - Create new person
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const body = await request.json()
 
   const [person] = await db
     .insert(people)
     .values({
+      userId,
       name: body.name,
       nickname: body.nickname,
       email: body.email,

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { people, loanPayments } from '@/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -12,10 +13,13 @@ export async function GET(
   _request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
 
   const person = await db.query.people.findFirst({
-    where: eq(people.id, id),
+    where: and(eq(people.id, id), eq(people.userId, userId)),
     with: {
       loans: {
         with: {
@@ -67,6 +71,9 @@ export async function PUT(
   request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
   const body = await request.json()
 
@@ -81,7 +88,7 @@ export async function PUT(
       notes: body.notes,
       updatedAt: new Date(),
     })
-    .where(eq(people.id, id))
+    .where(and(eq(people.id, id), eq(people.userId, userId)))
     .returning()
 
   return NextResponse.json(person)
@@ -89,11 +96,14 @@ export async function PUT(
 
 // DELETE /api/people/:id
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
 
-  await db.delete(people).where(eq(people.id, id))
+  await db.delete(people).where(and(eq(people.id, id), eq(people.userId, userId)))
   return NextResponse.json({ success: true })
 }

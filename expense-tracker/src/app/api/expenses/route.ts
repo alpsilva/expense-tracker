@@ -2,21 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { recurringExpenses } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 // GET /api/expenses - List all expenses, segmented by recurrence
 export async function GET(request: NextRequest) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const searchParams = request.nextUrl.searchParams
   const activeOnly = searchParams.get('active') === 'true'
   const recurrence = searchParams.get('recurrence') as 'monthly' | 'yearly' | null
 
-  const conditions = []
+  const conditions = [eq(recurringExpenses.userId, userId)]
   if (activeOnly) conditions.push(eq(recurringExpenses.isActive, true))
   if (recurrence) conditions.push(eq(recurringExpenses.recurrence, recurrence))
 
   const expenses = await db
     .select()
     .from(recurringExpenses)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(recurringExpenses.dueDay, desc(recurringExpenses.createdAt))
 
   // Group by recurrence type
@@ -43,11 +47,15 @@ export async function GET(request: NextRequest) {
 
 // POST /api/expenses - Create new expense
 export async function POST(request: NextRequest) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const body = await request.json()
 
   const [expense] = await db
     .insert(recurringExpenses)
     .values({
+      userId,
       name: body.name,
       description: body.description,
       amount: body.amount.toString(),

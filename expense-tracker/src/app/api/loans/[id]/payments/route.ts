@@ -1,18 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
-import { loans, loanPayments } from '@/db/schema'
-import { eq, desc } from 'drizzle-orm'
+import { loans, loanPayments, people } from '@/db/schema'
+import { eq, desc, and } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
+// Helper to verify loan belongs to current user
+async function verifyLoanOwnership(loanId: string, userId: string) {
+  const loan = await db.query.loans.findFirst({
+    where: eq(loans.id, loanId),
+    with: { person: true },
+  })
+
+  if (!loan) return null
+
+  // Check if the person belongs to this user
+  const [person] = await db
+    .select()
+    .from(people)
+    .where(and(eq(people.id, loan.personId), eq(people.userId, userId)))
+    .limit(1)
+
+  return person ? loan : null
+}
+
 // GET /api/loans/:id/payments - List payments for a loan
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
+
+  // Verify ownership before listing payments
+  const loan = await verifyLoanOwnership(id, userId)
+  if (!loan) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
 
   const payments = await db
     .select()
@@ -28,7 +57,17 @@ export async function POST(
   request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
+
+  // Verify ownership before creating payment
+  const existingLoan = await verifyLoanOwnership(id, userId)
+  if (!existingLoan) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const body = await request.json()
 
   // Create the payment

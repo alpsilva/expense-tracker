@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
 import { recurringExpenses } from '@/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
+import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -9,15 +10,18 @@ type RouteContext = {
 
 // GET /api/expenses/:id
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
 
   const [expense] = await db
     .select()
     .from(recurringExpenses)
-    .where(eq(recurringExpenses.id, id))
+    .where(and(eq(recurringExpenses.id, id), eq(recurringExpenses.userId, userId)))
     .limit(1)
 
   if (!expense) {
@@ -32,6 +36,9 @@ export async function PUT(
   request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
   const body = await request.json()
 
@@ -54,7 +61,7 @@ export async function PUT(
       isActive: body.isActive,
       updatedAt: new Date(),
     })
-    .where(eq(recurringExpenses.id, id))
+    .where(and(eq(recurringExpenses.id, id), eq(recurringExpenses.userId, userId)))
     .returning()
 
   return NextResponse.json(expense)
@@ -62,14 +69,17 @@ export async function PUT(
 
 // DELETE /api/expenses/:id
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   context: RouteContext
 ) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
   const { id } = await context.params
 
   await db
     .delete(recurringExpenses)
-    .where(eq(recurringExpenses.id, id))
+    .where(and(eq(recurringExpenses.id, id), eq(recurringExpenses.userId, userId)))
 
   return NextResponse.json({ success: true })
 }

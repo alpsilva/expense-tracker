@@ -1,14 +1,26 @@
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { ExpensesSummary } from '@/components/dashboard/expenses-summary'
 import { LoansSummary } from '@/components/dashboard/loans-summary'
 import { UpcomingPayments } from '@/components/dashboard/upcoming-payments'
 
 async function getDashboardData() {
+  const cookieStore = await cookies()
+  const userId = cookieStore.get('userId')?.value
+
+  if (!userId) {
+    redirect('/login')
+  }
+
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : 'http://localhost:3000'
 
   const res = await fetch(`${baseUrl}/api/dashboard`, {
     cache: 'no-store',
+    headers: {
+      Cookie: `userId=${userId}`,
+    },
   })
 
   if (!res.ok) {
