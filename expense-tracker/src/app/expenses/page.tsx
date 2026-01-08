@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ExpensesSection } from '@/components/expenses/expenses-section'
+import { getExpensesList } from '@/lib/queries/expenses'
 
-async function getExpenses() {
+export default async function ExpensesPage() {
   const cookieStore = await cookies()
   const userId = cookieStore.get('userId')?.value
 
@@ -12,26 +13,7 @@ async function getExpenses() {
     redirect('/login')
   }
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'http://localhost:3000'
-
-  const res = await fetch(`${baseUrl}/api/expenses`, {
-    cache: 'no-store',
-    headers: {
-      Cookie: `userId=${userId}`,
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch expenses')
-  }
-
-  return res.json()
-}
-
-export default async function ExpensesPage() {
-  const data = await getExpenses()
+  const data = await getExpensesList(userId)
 
   return (
     <div className="space-y-6">

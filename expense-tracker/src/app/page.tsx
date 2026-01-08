@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import { ExpensesSummary } from '@/components/dashboard/expenses-summary'
 import { LoansSummary } from '@/components/dashboard/loans-summary'
 import { UpcomingPayments } from '@/components/dashboard/upcoming-payments'
+import { getDashboardData } from '@/lib/queries/dashboard'
 
-async function getDashboardData() {
+export default async function DashboardPage() {
   const cookieStore = await cookies()
   const userId = cookieStore.get('userId')?.value
 
@@ -12,26 +13,7 @@ async function getDashboardData() {
     redirect('/login')
   }
 
-  const baseUrl = process.env.VERCEL_URL
-    ? 'https://expense-tracker-alpsilva.vercel.app'
-    : 'http://localhost:3000'
-
-  const res = await fetch(`${baseUrl}/api/dashboard`, {
-    cache: 'no-store',
-    headers: {
-      Cookie: `userId=${userId}`,
-    },
-  })
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch dashboard data')
-  }
-
-  return res.json()
-}
-
-export default async function DashboardPage() {
-  const data = await getDashboardData()
+  const data = await getDashboardData(userId)
 
   return (
     <div className="space-y-6">
