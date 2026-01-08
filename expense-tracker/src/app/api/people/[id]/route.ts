@@ -9,7 +9,7 @@ type RouteContext = {
 
 // GET /api/people/:id - Get person with all loans and computed balance
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: RouteContext
 ) {
   const { id } = await context.params
