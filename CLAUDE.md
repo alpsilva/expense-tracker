@@ -12,9 +12,11 @@ This project uses **pnpm**. Always use pnpm for installing dependencies and runn
 
 ## Documentation Rules
 
-Maintain a simple, small README.md in the project root with:
+Maintain a simple, small README.md in the **project root** (`/Users/alpsilva/projects/expense-tracker/README.md`) with:
 - All important commands and their descriptions
 - Required environment variables and their purpose
+
+**Important:** The README to update is at the repository root, NOT inside the `expense-tracker/` subdirectory.
 
 Update the README when adding new commands or environment variables.
 
