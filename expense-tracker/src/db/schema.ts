@@ -49,11 +49,28 @@ export const transactionDirectionEnum = pgEnum('transaction_direction', [
 ])
 
 // ============================================
+// USERS (simple auth)
+// ============================================
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+
+  username: text('username').notNull().unique(),
+  pin: text('pin').notNull(),  // 4 digit PIN, stored as text (not encrypted for demo)
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// ============================================
 // RECURRING EXPENSES
 // ============================================
 
 export const recurringExpenses = pgTable('recurring_expenses', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
+
+  // Owner
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 
   // Basic info
   name: text('name').notNull(),
@@ -92,6 +109,9 @@ export const recurringExpenses = pgTable('recurring_expenses', {
 
 export const people = pgTable('people', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
+
+  // Owner
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
 
   name: text('name').notNull(),
   nickname: text('nickname'),           // How you refer to them
@@ -155,7 +175,23 @@ export const loanPayments = pgTable('loan_payments', {
 // RELATIONS
 // ============================================
 
-export const peopleRelations = relations(people, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
+  expenses: many(recurringExpenses),
+  people: many(people),
+}))
+
+export const recurringExpensesRelations = relations(recurringExpenses, ({ one }) => ({
+  user: one(users, {
+    fields: [recurringExpenses.userId],
+    references: [users.id],
+  }),
+}))
+
+export const peopleRelations = relations(people, ({ one, many }) => ({
+  user: one(users, {
+    fields: [people.userId],
+    references: [users.id],
+  }),
   loans: many(loans),
 }))
 
@@ -177,6 +213,9 @@ export const loanPaymentsRelations = relations(loanPayments, ({ one }) => ({
 // ============================================
 // TYPE EXPORTS
 // ============================================
+
+export type User = typeof users.$inferSelect
+export type NewUser = typeof users.$inferInsert
 
 export type RecurringExpense = typeof recurringExpenses.$inferSelect
 export type NewRecurringExpense = typeof recurringExpenses.$inferInsert
