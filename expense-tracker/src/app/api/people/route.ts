@@ -43,8 +43,12 @@ export async function GET() {
     }
   })
 
-  // Sort by absolute balance (biggest first)
-  peopleWithBalances.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+  // Sort by creation date (newest first), then alphabetically by name
+  peopleWithBalances.sort((a, b) => {
+    const dateCompare = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    if (dateCompare !== 0) return dateCompare
+    return a.name.localeCompare(b.name)
+  })
 
   // Calculate global totals
   const totals = peopleWithBalances.reduce(
