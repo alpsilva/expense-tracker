@@ -19,6 +19,14 @@ export async function PATCH(
   const { id: personId, txId } = await context.params
   const body = await request.json()
 
+  // Validate disregarded field
+  if (body.disregarded !== undefined && typeof body.disregarded !== 'boolean') {
+    return NextResponse.json(
+      { error: 'Invalid disregarded value. Must be a boolean.' },
+      { status: 400 }
+    )
+  }
+
   // Verify person belongs to user
   const person = await db.query.people.findFirst({
     where: and(eq(people.id, personId), eq(people.userId, userId)),
