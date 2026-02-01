@@ -15,6 +15,13 @@
       "when": 1769939739042,
       "tag": "0001_greedy_ogun",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769941309156,
+      "tag": "0002_yummy_drax",
+      "breakpoints": true
     }
   ]
 }
