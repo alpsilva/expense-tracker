@@ -6,6 +6,14 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import { TransactionForm } from '@/components/ledger/transaction-form'
 
@@ -39,6 +47,7 @@ export default function LedgerDetailPage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true)
   const [lentOpen, setLentOpen] = useState(false)
   const [receivedOpen, setReceivedOpen] = useState(false)
+  const [confirmToggle, setConfirmToggle] = useState<{ txId: string; currentValue: boolean } | null>(null)
 
   const fetchData = useCallback(() => {
     fetch(`/api/people/${id}`)
@@ -53,12 +62,15 @@ export default function LedgerDetailPage({ params }: { params: Promise<{ id: str
     fetchData()
   }, [fetchData])
 
-  async function handleToggleDisregard(txId: string, currentValue: boolean) {
-    await fetch(`/api/people/${id}/transactions/${txId}`, {
+  async function handleConfirmToggle() {
+    if (!confirmToggle) return
+
+    await fetch(`/api/people/${id}/transactions/${confirmToggle.txId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ disregarded: !currentValue }),
+      body: JSON.stringify({ disregarded: !confirmToggle.currentValue }),
     })
+    setConfirmToggle(null)
     fetchData()
   }
 
@@ -167,7 +179,7 @@ export default function LedgerDetailPage({ params }: { params: Promise<{ id: str
                           ? 'hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900 dark:hover:text-green-300'
                           : 'hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-900 dark:hover:text-orange-300'
                       }`}
-                      onClick={() => handleToggleDisregard(tx.id, tx.disregarded)}
+                      onClick={() => setConfirmToggle({ txId: tx.id, currentValue: tx.disregarded })}
                     >
                       {tx.disregarded ? 'Restaurar' : 'Desconsiderar'}
                     </Button>
@@ -204,6 +216,33 @@ export default function LedgerDetailPage({ params }: { params: Promise<{ id: str
         onOpenChange={setReceivedOpen}
         onSuccess={fetchData}
       />
+
+      {/* Confirmation dialog */}
+      <Dialog open={!!confirmToggle} onOpenChange={(open) => !open && setConfirmToggle(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmToggle?.currentValue ? 'Restaurar transação?' : 'Desconsiderar transação?'}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmToggle?.currentValue
+                ? 'Esta transação voltará a ser considerada no cálculo do saldo.'
+                : 'Esta transação será ignorada no cálculo do saldo, mas continuará visível no histórico.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmToggle(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmToggle?.currentValue ? 'default' : 'destructive'}
+              onClick={handleConfirmToggle}
+            >
+              {confirmToggle?.currentValue ? 'Restaurar' : 'Desconsiderar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
