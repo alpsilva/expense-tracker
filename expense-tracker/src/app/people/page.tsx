@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { PersonCard } from '@/components/people/person-card'
+import { PersonFormDialog } from '@/components/people/person-form-dialog'
 import { formatCurrency } from '@/lib/formatters'
 
 interface PersonWithBalance {
@@ -16,7 +15,7 @@ interface PersonWithBalance {
   relationship: string | null
   balance: number
   balanceDirection: 'they_owe_me' | 'i_owe_them' | 'settled'
-  activeLoansCount: number
+  transactionCount: number
 }
 
 interface PeopleData {
@@ -29,11 +28,12 @@ interface PeopleData {
 }
 
 export default function PeoplePage() {
-  const router = useRouter()
   const [data, setData] = useState<PeopleData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedPerson, setSelectedPerson] = useState<PersonWithBalance | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     fetch('/api/people')
       .then((res) => res.json())
       .then((data) => {
@@ -41,6 +41,10 @@ export default function PeoplePage() {
         setLoading(false)
       })
   }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   if (loading) {
     return <div className="text-center py-12">Carregando...</div>
@@ -50,9 +54,9 @@ export default function PeoplePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Pessoas</h1>
-        <Link href="/people/new">
-          <Button>+ Nova Pessoa</Button>
-        </Link>
+        <Button onClick={() => { setSelectedPerson(null); setDialogOpen(true) }}>
+          + Nova Pessoa
+        </Button>
       </div>
 
       {data && data.totals && (
@@ -79,7 +83,10 @@ export default function PeoplePage() {
           <PersonCard
             key={person.id}
             person={person}
-            onClick={() => router.push(`/people/${person.id}`)}
+            onClick={() => {
+              setSelectedPerson(person)
+              setDialogOpen(true)
+            }}
           />
         ))}
       </div>
@@ -87,11 +94,21 @@ export default function PeoplePage() {
       {data?.people.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <p>Nenhuma pessoa cadastrada.</p>
-          <Link href="/people/new" className="text-primary hover:underline">
+          <button
+            onClick={() => { setSelectedPerson(null); setDialogOpen(true) }}
+            className="text-primary hover:underline"
+          >
             Adicione sua primeira pessoa
-          </Link>
+          </button>
         </div>
       )}
+
+      <PersonFormDialog
+        person={selectedPerson}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={fetchData}
+      />
     </div>
   )
 }

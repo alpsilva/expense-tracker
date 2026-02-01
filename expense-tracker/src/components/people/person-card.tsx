@@ -13,7 +13,7 @@ interface PersonWithBalance {
   relationship?: string | null
   balance: number
   balanceDirection: 'they_owe_me' | 'i_owe_them' | 'settled'
-  activeLoansCount: number
+  transactionCount: number
 }
 
 interface PersonCardProps {
@@ -47,9 +47,9 @@ export function PersonCard({ person, onClick }: PersonCardProps) {
             <p className={`text-lg font-bold ${balanceColor}`}>
               {balanceLabel}: {formatCurrency(Math.abs(person.balance))}
             </p>
-            {person.activeLoansCount > 0 && (
+            {person.transactionCount > 0 && (
               <Badge variant="secondary" className="mt-1">
-                {person.activeLoansCount} empréstimo{person.activeLoansCount > 1 ? 's' : ''} ativo{person.activeLoansCount > 1 ? 's' : ''}
+                {person.transactionCount} transaç{person.transactionCount > 1 ? 'ões' : 'ão'}
               </Badge>
             )}
           </div>
