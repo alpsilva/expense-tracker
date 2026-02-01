@@ -48,6 +48,12 @@ export const transactionDirectionEnum = pgEnum('transaction_direction', [
   'borrowed',  // I borrowed money FROM this person (I owe them)
 ])
 
+// Transaction type for the new ledger model
+export const transactionTypeEnum = pgEnum('transaction_type', [
+  'lent',
+  'received',
+])
+
 // ============================================
 // USERS (simple auth)
 // ============================================
@@ -172,6 +178,24 @@ export const loanPayments = pgTable('loan_payments', {
 })
 
 // ============================================
+// TRANSACTIONS (new ledger model)
+// ============================================
+
+export const transactions = pgTable('transactions', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+
+  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
+
+  type: transactionTypeEnum('type').notNull(),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
+  description: text('description'),
+  disregarded: boolean('disregarded').default(false).notNull(),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// ============================================
 // RELATIONS
 // ============================================
 
@@ -193,6 +217,7 @@ export const peopleRelations = relations(people, ({ one, many }) => ({
     references: [users.id],
   }),
   loans: many(loans),
+  transactions: many(transactions),
 }))
 
 export const loansRelations = relations(loans, ({ one, many }) => ({
@@ -207,6 +232,13 @@ export const loanPaymentsRelations = relations(loanPayments, ({ one }) => ({
   loan: one(loans, {
     fields: [loanPayments.loanId],
     references: [loans.id],
+  }),
+}))
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  person: one(people, {
+    fields: [transactions.personId],
+    references: [people.id],
   }),
 }))
 
@@ -228,3 +260,6 @@ export type NewLoan = typeof loans.$inferInsert
 
 export type LoanPayment = typeof loanPayments.$inferSelect
 export type NewLoanPayment = typeof loanPayments.$inferInsert
+
+export type Transaction = typeof transactions.$inferSelect
+export type NewTransaction = typeof transactions.$inferInsert
