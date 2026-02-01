@@ -28,13 +28,40 @@ export async function POST(
     return NextResponse.json({ error: 'Person not found' }, { status: 404 })
   }
 
+  // Validate type
+  const allowedTypes = ['lent', 'received'] as const
+  if (!allowedTypes.includes(body.type)) {
+    return NextResponse.json(
+      { error: 'Invalid type. Must be "lent" or "received".' },
+      { status: 400 }
+    )
+  }
+
+  // Validate amount
+  const amount = parseFloat(body.amount)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return NextResponse.json(
+      { error: 'Invalid amount. Must be a positive number.' },
+      { status: 400 }
+    )
+  }
+
+  // Validate date
+  const date = new Date(body.date)
+  if (isNaN(date.getTime())) {
+    return NextResponse.json(
+      { error: 'Invalid date.' },
+      { status: 400 }
+    )
+  }
+
   const [transaction] = await db
     .insert(transactions)
     .values({
       personId,
       type: body.type,
-      amount: body.amount.toString(),
-      date: new Date(body.date),
+      amount: amount.toString(),
+      date,
       description: body.description || null,
     })
     .returning()
