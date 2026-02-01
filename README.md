@@ -11,9 +11,22 @@ A personal expense tracking application built with Next.js, Drizzle ORM, and Neo
 | `pnpm build` | Build for production |
 | `pnpm start` | Start production server |
 | `pnpm lint` | Run ESLint |
-| `pnpm db:generate` | Generate database migration files |
-| `pnpm db:push` | Push schema changes to database |
+| `pnpm db:generate` | Generate SQL migration files from schema changes |
+| `pnpm db:migrate` | Apply pending migrations to database |
+| `pnpm db:push` | Push schema directly (dev only, skips migrations) |
 | `pnpm db:studio` | Open Drizzle Studio (database GUI) |
+
+## Database Migrations
+
+Schema changes go through a migration workflow for safety:
+
+1. Edit `src/db/schema.ts`
+2. Run `pnpm db:generate` to create migration SQL files in `./drizzle`
+3. Review the generated SQL
+4. Commit the migration files with your code
+5. On deploy, `pnpm db:migrate` applies pending migrations
+
+Migration files are tracked in git and visible in PRs for review.
 
 ## Environment Variables
 
