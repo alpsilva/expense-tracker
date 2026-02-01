@@ -29,8 +29,8 @@ export default async function DashboardPage() {
           theyOweMe={data.loans.theyOweMe}
           iOweThem={data.loans.iOweThem}
           netBalance={data.loans.netBalance}
-          activeLoansCount={data.loans.activeLoansCount}
-          peopleWithActiveLoans={data.loans.peopleWithActiveLoans}
+          transactionCount={data.loans.transactionCount}
+          peopleWithBalance={data.loans.peopleWithBalance}
         />
       </div>
 

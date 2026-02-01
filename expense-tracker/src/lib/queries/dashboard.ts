@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { recurringExpenses, loans, people } from '@/db/schema'
+import { recurringExpenses, people } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export async function getDashboardData(userId: string) {
@@ -39,39 +39,50 @@ export async function getDashboardData(userId: string) {
   })
 
   // ============================================
-  // LOANS
+  // LOANS (from transactions)
   // ============================================
   const allPeople = await db.query.people.findMany({
     where: eq(people.userId, userId),
     with: {
-      loans: {
-        where: eq(loans.isSettled, false),
-        with: { payments: true },
-      },
+      transactions: true,
     },
   })
 
   let totalTheyOweMe = 0
   let totalIOweThem = 0
+  let transactionCount = 0
 
   for (const person of allPeople) {
-    for (const loan of person.loans) {
-      const remaining =
-        parseFloat(loan.amount) -
-        loan.payments.reduce((sum, p) => sum + parseFloat(p.amount), 0)
+    let balance = 0
+    for (const tx of person.transactions) {
+      if (tx.disregarded) continue
+      transactionCount++
 
-      if (loan.direction === 'lent') {
-        totalTheyOweMe += remaining
+      const amount = parseFloat(tx.amount)
+      if (tx.type === 'lent') {
+        balance += amount
       } else {
-        totalIOweThem += remaining
+        balance -= amount
       }
+    }
+
+    if (balance > 0) {
+      totalTheyOweMe += balance
+    } else if (balance < 0) {
+      totalIOweThem += Math.abs(balance)
     }
   }
 
-  const activeLoansCount = allPeople.reduce(
-    (sum, p) => sum + p.loans.length,
-    0
-  )
+  const peopleWithBalance = allPeople.filter((p) => {
+    let balance = 0
+    for (const tx of p.transactions) {
+      if (tx.disregarded) continue
+      const amount = parseFloat(tx.amount)
+      if (tx.type === 'lent') balance += amount
+      else balance -= amount
+    }
+    return balance !== 0
+  }).length
 
   return {
     expenses: {
@@ -107,8 +118,8 @@ export async function getDashboardData(userId: string) {
       theyOweMe: totalTheyOweMe,
       iOweThem: totalIOweThem,
       netBalance: totalTheyOweMe - totalIOweThem,
-      activeLoansCount,
-      peopleWithActiveLoans: allPeople.filter((p) => p.loans.length > 0).length,
+      transactionCount,
+      peopleWithBalance,
     },
   }
 }

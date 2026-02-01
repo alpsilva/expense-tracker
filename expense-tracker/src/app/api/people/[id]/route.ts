@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/db'
-import { people, loanPayments } from '@/db/schema'
+import { people, transactions } from '@/db/schema'
 import { eq, and, desc } from 'drizzle-orm'
 import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
@@ -8,7 +8,7 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-// GET /api/people/:id - Get person with all loans and computed balance
+// GET /api/people/:id - Get person with all transactions and computed balance
 export async function GET(
   _request: NextRequest,
   context: RouteContext
@@ -21,12 +21,8 @@ export async function GET(
   const person = await db.query.people.findFirst({
     where: and(eq(people.id, id), eq(people.userId, userId)),
     with: {
-      loans: {
-        with: {
-          payments: {
-            orderBy: [desc(loanPayments.paidAt)],
-          },
-        },
+      transactions: {
+        orderBy: [desc(transactions.date), desc(transactions.createdAt)],
       },
     },
   })
@@ -35,32 +31,21 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Calculate balance and enrich loans
+  // Calculate balance from transactions
   let balance = 0
-  const enrichedLoans = person.loans.map((loan) => {
-    const loanAmount = parseFloat(loan.amount)
-    const totalPaid = loan.payments.reduce(
-      (sum, p) => sum + parseFloat(p.amount),
-      0
-    )
-    const remaining = loanAmount - totalPaid
+  for (const tx of person.transactions) {
+    if (tx.disregarded) continue
 
-    if (loan.direction === 'lent') {
-      balance += remaining
+    const amount = parseFloat(tx.amount)
+    if (tx.type === 'lent') {
+      balance += amount
     } else {
-      balance -= remaining
+      balance -= amount
     }
-
-    return {
-      ...loan,
-      totalPaid,
-      remaining,
-    }
-  })
+  }
 
   return NextResponse.json({
     ...person,
-    loans: enrichedLoans,
     balance,
     balanceDirection: balance > 0 ? 'they_owe_me' : balance < 0 ? 'i_owe_them' : 'settled',
   })

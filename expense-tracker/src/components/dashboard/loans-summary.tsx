@@ -7,11 +7,11 @@ interface LoansSummaryProps {
   theyOweMe: number
   iOweThem: number
   netBalance: number
-  activeLoansCount: number
-  peopleWithActiveLoans: number
+  transactionCount: number
+  peopleWithBalance: number
 }
 
-export function LoansSummary({ theyOweMe, iOweThem, netBalance, activeLoansCount, peopleWithActiveLoans }: LoansSummaryProps) {
+export function LoansSummary({ theyOweMe, iOweThem, netBalance, transactionCount, peopleWithBalance }: LoansSummaryProps) {
   const netBalanceColor = netBalance > 0 ? 'text-green-600' : netBalance < 0 ? 'text-red-600' : 'text-muted-foreground'
 
   return (
@@ -36,7 +36,7 @@ export function LoansSummary({ theyOweMe, iOweThem, netBalance, activeLoansCount
             {netBalance > 0 ? '+' : ''}{formatCurrency(netBalance)}
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            {activeLoansCount} empréstimo{activeLoansCount !== 1 ? 's' : ''} ativo{activeLoansCount !== 1 ? 's' : ''} • {peopleWithActiveLoans} pessoa{peopleWithActiveLoans !== 1 ? 's' : ''}
+            {transactionCount} transaç{transactionCount !== 1 ? 'ões' : 'ão'} • {peopleWithBalance} pessoa{peopleWithBalance !== 1 ? 's' : ''}
           </p>
         </div>
       </CardContent>

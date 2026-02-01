@@ -34,6 +34,12 @@ pnpm start
 
 # Run linting
 pnpm lint
+
+# Database migrations
+pnpm db:generate    # Generate SQL migration from schema changes
+pnpm db:migrate     # Apply pending migrations
+pnpm db:studio      # Open Drizzle Studio GUI
+pnpm db:push        # Push schema directly (dev only, skips migrations)
 ```
 
 ## Architecture
@@ -50,11 +56,65 @@ pnpm lint
 
 ### Database
 - Connection configured via `DATABASE_URL` in `.env.local`
-- Use Drizzle Kit for migrations: `npx drizzle-kit` commands
-- Drizzle schema files should define tables with type-safe TypeScript
+- Schema defined in `src/db/schema.ts`
+- **Migration workflow:**
+  1. Edit schema.ts
+  2. Run `pnpm db:generate` to create SQL migration
+  3. Review generated SQL in `./drizzle/`
+  4. Commit migration files
+  5. Run `pnpm db:migrate` to apply
 
 ### Project Structure
+```text
+src/app/              # Next.js App Router pages and layouts
+src/app/api/          # API routes
+src/components/       # React components
+src/components/ui/    # Reusable UI components (shadcn/ui)
+src/components/ledger/# Loan ledger components
+src/db/               # Database schema and connection
+src/lib/              # Utilities, formatters, queries
+drizzle/              # Generated SQL migrations
+public/               # Static assets
 ```
-src/app/          # Next.js App Router pages and layouts
-public/           # Static assets
-```
+
+## Features
+
+### Recurring Expenses
+Track monthly and yearly recurring expenses with categories, payment methods, and due dates.
+
+### Loan Ledger
+People-first loan tracking system:
+- **Ledger model:** Each person has a ledger (list of transactions)
+- **Transaction types:** `lent` (money out) and `received` (money in)
+- **Balance calculation:** Sum of transactions determines who owes whom
+- **Disregard feature:** Transactions can be marked as disregarded (excluded from balance but kept for audit)
+
+**Routes:**
+- `/loans` - List of people with balances and quick-add buttons
+- `/loans/[id]` - Person's transaction history
+- `/loans/new` - Create new person
+
+**API endpoints:**
+- `GET/POST /api/people` - List/create people
+- `GET/PUT/DELETE /api/people/[id]` - Person details
+- `POST /api/people/[id]/transactions` - Create transaction
+- `PATCH /api/people/[id]/transactions/[txId]` - Update transaction (toggle disregard)
+
+## API Patterns
+
+### Authentication
+All API routes use `getAuthUserId()` from `@/lib/api-auth` and return `unauthorizedResponse()` if not authenticated.
+
+### Input Validation
+Validate request body fields before database operations:
+- Check enum values against allowed list
+- Parse numbers and verify `Number.isFinite()` and range
+- Parse dates and verify `!isNaN(date.getTime())`
+- Return 400 with descriptive error message on validation failure
+
+### Response Patterns
+- `200` - Success (GET, PUT, PATCH)
+- `201` - Created (POST)
+- `400` - Bad request (validation errors)
+- `401` - Unauthorized
+- `404` - Not found
