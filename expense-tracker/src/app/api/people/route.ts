@@ -9,52 +9,41 @@ export async function GET() {
   const userId = await getAuthUserId()
   if (!userId) return unauthorizedResponse()
 
-  // Get all people with their loans and payments
   const allPeople = await db.query.people.findMany({
     where: eq(people.userId, userId),
     with: {
-      loans: {
-        with: {
-          payments: true,
-        },
-      },
+      transactions: true,
     },
     orderBy: [desc(people.updatedAt)],
   })
 
-  // Calculate balance for each person
+  // Calculate balance for each person from transactions
   const peopleWithBalances = allPeople.map((person) => {
-    let balance = 0 // Positive = they owe me, Negative = I owe them
+    let balance = 0
 
-    for (const loan of person.loans) {
-      const loanAmount = parseFloat(loan.amount)
-      const totalPaid = loan.payments.reduce(
-        (sum, p) => sum + parseFloat(p.amount),
-        0
-      )
-      const remaining = loanAmount - totalPaid
+    for (const tx of person.transactions) {
+      if (tx.disregarded) continue
 
-      if (loan.direction === 'lent') {
-        // I lent money, they owe me
-        balance += remaining
+      const amount = parseFloat(tx.amount)
+      if (tx.type === 'lent') {
+        balance += amount // They owe me more
       } else {
-        // I borrowed money, I owe them
-        balance -= remaining
+        balance -= amount // They owe me less
       }
     }
 
-    const activeLoans = person.loans.filter((l) => !l.isSettled)
+    const transactionCount = person.transactions.filter(tx => !tx.disregarded).length
 
     return {
       ...person,
       balance,
       balanceDirection: balance > 0 ? 'they_owe_me' : balance < 0 ? 'i_owe_them' : 'settled',
-      activeLoansCount: activeLoans.length,
-      loans: undefined, // Don't send all loan details in list
+      transactionCount,
+      transactions: undefined, // Don't send all transactions in list
     }
   })
 
-  // Sort by absolute balance (biggest debts first)
+  // Sort by absolute balance (biggest first)
   peopleWithBalances.sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
 
   // Calculate global totals
