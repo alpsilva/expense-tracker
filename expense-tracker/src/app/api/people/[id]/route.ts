@@ -22,7 +22,7 @@ export async function GET(
     where: and(eq(people.id, id), eq(people.userId, userId)),
     with: {
       transactions: {
-        orderBy: [desc(transactions.date)],
+        orderBy: [desc(transactions.date), desc(transactions.createdAt)],
       },
     },
   })
