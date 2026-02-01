@@ -44,10 +44,14 @@ export function TransactionForm({
     setLoading(true)
 
     try {
+      // Parse date as local timezone (date input gives YYYY-MM-DD)
+      const [year, month, day] = formData.date.split('-').map(Number)
+      const localDate = new Date(year, month - 1, day, 12, 0, 0) // noon to avoid edge cases
+
       const payload = {
         type,
         amount: parseFloat(formData.amount),
-        date: new Date(formData.date).toISOString(),
+        date: localDate.toISOString(),
         description: formData.description || null,
       }
 

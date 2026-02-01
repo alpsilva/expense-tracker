@@ -11,6 +11,7 @@ export function formatCurrency(
 
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
+  // Display in user's local timezone (dates stored at noon UTC avoid edge cases)
   return new Intl.DateTimeFormat('pt-BR').format(d)
 }
 
