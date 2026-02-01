@@ -65,7 +65,7 @@ pnpm db:push        # Push schema directly (dev only, skips migrations)
   5. Run `pnpm db:migrate` to apply
 
 ### Project Structure
-```
+```text
 src/app/              # Next.js App Router pages and layouts
 src/app/api/          # API routes
 src/components/       # React components
