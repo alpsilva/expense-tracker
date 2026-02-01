@@ -131,54 +131,7 @@ export const people = pgTable('people', {
 })
 
 // ============================================
-// LOANS (bidirectional)
-// ============================================
-
-export const loans = pgTable('loans', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-
-  personId: text('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
-
-  // Direction: did I lend or borrow?
-  direction: transactionDirectionEnum('direction').notNull(),
-
-  // Loan details
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  currency: text('currency').default('BRL').notNull(),
-  reason: text('reason').notNull(),     // Why the loan happened
-
-  // Dates
-  transactionDate: timestamp('transaction_date', { withTimezone: true }).notNull(),
-  expectedSettlement: timestamp('expected_settlement', { withTimezone: true }),
-
-  // Status
-  isSettled: boolean('is_settled').default(false).notNull(),
-
-  notes: text('notes'),
-
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-})
-
-// ============================================
-// LOAN PAYMENTS
-// ============================================
-
-export const loanPayments = pgTable('loan_payments', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-
-  loanId: text('loan_id').notNull().references(() => loans.id, { onDelete: 'cascade' }),
-
-  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
-  paidAt: timestamp('paid_at', { withTimezone: true }).notNull(),
-  method: paymentMethodEnum('method'),
-  notes: text('notes'),
-
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
-
-// ============================================
-// TRANSACTIONS (new ledger model)
+// TRANSACTIONS (ledger model)
 // ============================================
 
 export const transactions = pgTable('transactions', {
@@ -216,23 +169,7 @@ export const peopleRelations = relations(people, ({ one, many }) => ({
     fields: [people.userId],
     references: [users.id],
   }),
-  loans: many(loans),
   transactions: many(transactions),
-}))
-
-export const loansRelations = relations(loans, ({ one, many }) => ({
-  person: one(people, {
-    fields: [loans.personId],
-    references: [people.id],
-  }),
-  payments: many(loanPayments),
-}))
-
-export const loanPaymentsRelations = relations(loanPayments, ({ one }) => ({
-  loan: one(loans, {
-    fields: [loanPayments.loanId],
-    references: [loans.id],
-  }),
 }))
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({
@@ -254,12 +191,6 @@ export type NewRecurringExpense = typeof recurringExpenses.$inferInsert
 
 export type Person = typeof people.$inferSelect
 export type NewPerson = typeof people.$inferInsert
-
-export type Loan = typeof loans.$inferSelect
-export type NewLoan = typeof loans.$inferInsert
-
-export type LoanPayment = typeof loanPayments.$inferSelect
-export type NewLoanPayment = typeof loanPayments.$inferInsert
 
 export type Transaction = typeof transactions.$inferSelect
 export type NewTransaction = typeof transactions.$inferInsert
