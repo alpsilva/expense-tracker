@@ -162,6 +162,11 @@ export default function LedgerDetailPage({ params }: { params: Promise<{ id: str
                     <Button
                       size="sm"
                       variant="ghost"
+                      className={`transition-all hover:scale-105 active:scale-95 ${
+                        tx.disregarded
+                          ? 'hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900 dark:hover:text-green-300'
+                          : 'hover:bg-orange-100 hover:text-orange-700 dark:hover:bg-orange-900 dark:hover:text-orange-300'
+                      }`}
                       onClick={() => handleToggleDisregard(tx.id, tx.disregarded)}
                     >
                       {tx.disregarded ? 'Restaurar' : 'Desconsiderar'}
