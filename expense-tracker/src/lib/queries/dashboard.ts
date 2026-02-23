@@ -59,15 +59,18 @@ function computeDuePayments(
         const key = `${expense.id}-${y}-${m}`
         const isPaid = paidSet.has(key)
 
-        // Calculate days until due for this specific month
+        // Calculate days until due, clamping dueDay to the month's last day
+        const lastDay = new Date(y, m, 0).getDate()
+        const effectiveDueDay = Math.min(expense.dueDay, lastDay)
+
         let daysUntilDue: number
         if (y < currentYear || (y === currentYear && m < currentMonth)) {
           // Past month — overdue by distance
-          const dueDate = new Date(y, m - 1, expense.dueDay)
+          const dueDate = new Date(y, m - 1, effectiveDueDay)
           daysUntilDue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) * -1
         } else {
           // Current month
-          daysUntilDue = expense.dueDay - currentDay
+          daysUntilDue = effectiveDueDay - currentDay
         }
 
         const isOverdue = daysUntilDue < 0
