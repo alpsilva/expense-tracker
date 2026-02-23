@@ -21,8 +21,8 @@ New `paymentRecords` table:
 
 ### Schema migration: make dueDay mandatory
 
-- `dueDay` becomes `NOT NULL` (backfill existing nulls with `1`)
-- `dueMonth` becomes `NOT NULL` for yearly expenses (backfill existing nulls with `1`)
+- `dueDay` becomes `NOT NULL` in `recurring_expenses` (migration `0003_loving_mongoose.sql` backfills existing nulls with `1`)
+- `dueMonth` remains **nullable** — PostgreSQL cannot enforce `NOT NULL` conditionally for only yearly expenses. The query layer (`computeDuePayments`) falls back to the `startDate` month when `dueMonth` is null.
 
 ## Computing Due Payments
 
