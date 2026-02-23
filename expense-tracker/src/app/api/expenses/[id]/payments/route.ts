@@ -65,7 +65,23 @@ export async function POST(
     return NextResponse.json({ error: 'Expense not found' }, { status: 404 })
   }
 
-  // Check if already paid (idempotent)
+  // Insert with conflict handling for race-safe idempotency
+  const inserted = await db
+    .insert(paymentRecords)
+    .values({
+      expenseId,
+      year,
+      month,
+      paidAt: new Date(),
+    })
+    .onConflictDoNothing()
+    .returning()
+
+  if (inserted.length > 0) {
+    return NextResponse.json(inserted[0], { status: 201 })
+  }
+
+  // Conflict — record already exists, return it
   const existing = await db.query.paymentRecords.findFirst({
     where: and(
       eq(paymentRecords.expenseId, expenseId),
@@ -74,22 +90,7 @@ export async function POST(
     ),
   })
 
-  if (existing) {
-    return NextResponse.json(existing, { status: 200 })
-  }
-
-  // Create payment record
-  const [record] = await db
-    .insert(paymentRecords)
-    .values({
-      expenseId,
-      year,
-      month,
-      paidAt: new Date(),
-    })
-    .returning()
-
-  return NextResponse.json(record, { status: 201 })
+  return NextResponse.json(existing, { status: 200 })
 }
 
 // DELETE /api/expenses/:id/payments — Unmark expense payment for a month
