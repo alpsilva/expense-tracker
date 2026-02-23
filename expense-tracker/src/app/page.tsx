@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ExpensesSummary } from '@/components/dashboard/expenses-summary'
 import { LoansSummary } from '@/components/dashboard/loans-summary'
-import { UpcomingPayments } from '@/components/dashboard/upcoming-payments'
+import { DuePayments } from '@/components/dashboard/due-payments'
 import { getDashboardData } from '@/lib/queries/dashboard'
 
 export default async function DashboardPage() {
@@ -34,9 +34,9 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <UpcomingPayments
-        monthly={data.expenses.upcoming.monthly}
-        yearly={data.expenses.upcoming.yearly}
+      <DuePayments
+        unpaid={data.expenses.duePayments}
+        paid={data.expenses.paidPayments}
       />
     </div>
   )

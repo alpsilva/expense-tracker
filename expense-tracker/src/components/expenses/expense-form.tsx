@@ -71,7 +71,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
       const payload = {
         ...formData,
         amount: parseFloat(formData.amount),
-        dueDay: formData.dueDay ? parseInt(formData.dueDay) : null,
+        dueDay: parseInt(formData.dueDay),
         dueMonth: formData.dueMonth ? parseInt(formData.dueMonth) : null,
         startDate: new Date(formData.startDate).toISOString(),
       }
@@ -196,7 +196,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="dueDay">Dia de Vencimento</Label>
+              <Label htmlFor="dueDay">Dia de Vencimento *</Label>
               <Input
                 id="dueDay"
                 type="number"
@@ -205,6 +205,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
                 value={formData.dueDay}
                 onChange={(e) => setFormData({ ...formData, dueDay: e.target.value })}
                 placeholder="1-31"
+                required
               />
             </div>
 

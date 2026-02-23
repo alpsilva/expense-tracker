@@ -1,11 +1,128 @@
 import { db } from '@/db'
-import { recurringExpenses, people } from '@/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { recurringExpenses, people, paymentRecords } from '@/db/schema'
+import { eq, and, inArray } from 'drizzle-orm'
+
+export interface DuePayment {
+  expenseId: string
+  name: string
+  amount: string
+  dueDay: number
+  paymentMethod: string
+  year: number
+  month: number
+  isOverdue: boolean
+  daysUntilDue: number
+  recurrence: 'monthly' | 'yearly'
+}
+
+function computeDuePayments(
+  activeExpenses: typeof recurringExpenses.$inferSelect[],
+  paidRecords: typeof paymentRecords.$inferSelect[],
+  now: Date
+): { unpaid: DuePayment[]; paid: DuePayment[] } {
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const currentDay = now.getDate()
+
+  // Index paid records for fast lookup
+  const paidSet = new Set(
+    paidRecords.map((r) => `${r.expenseId}-${r.year}-${r.month}`)
+  )
+
+  const unpaid: DuePayment[] = []
+  const paid: DuePayment[] = []
+
+  for (const expense of activeExpenses) {
+    const startDate = new Date(expense.startDate)
+    const startYear = startDate.getFullYear()
+    const startMonth = startDate.getMonth() + 1
+
+    const endDate = expense.endDate ? new Date(expense.endDate) : null
+    const endYear = endDate ? endDate.getFullYear() : currentYear
+    const endMonth = endDate ? endDate.getMonth() + 1 : currentMonth
+
+    // Cap at current month
+    const lastYear = Math.min(endYear, currentYear)
+    let lastMonth: number
+    if (endYear < currentYear) {
+      lastMonth = endMonth
+    } else if (endYear > currentYear) {
+      lastMonth = currentMonth
+    } else {
+      lastMonth = Math.min(endMonth, currentMonth)
+    }
+
+    // Iterate through eligible months
+    for (let y = startYear; y <= lastYear; y++) {
+      const mStart = y === startYear ? startMonth : 1
+      const mEnd = y === lastYear ? lastMonth : 12
+
+      for (let m = mStart; m <= mEnd; m++) {
+        // Yearly expenses only apply in their dueMonth (fall back to startDate month)
+        if (expense.recurrence === 'yearly' && m !== (expense.dueMonth ?? startMonth)) {
+          continue
+        }
+
+        const key = `${expense.id}-${y}-${m}`
+        const isPaid = paidSet.has(key)
+
+        // Calculate days until due, clamping dueDay to the month's last day
+        const lastDay = new Date(y, m, 0).getDate()
+        const effectiveDueDay = Math.min(expense.dueDay, lastDay)
+
+        let daysUntilDue: number
+        if (y < currentYear || (y === currentYear && m < currentMonth)) {
+          // Past month — overdue by distance
+          const dueDate = new Date(y, m - 1, effectiveDueDay)
+          daysUntilDue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) * -1
+        } else {
+          // Current month
+          daysUntilDue = effectiveDueDay - currentDay
+        }
+
+        const isOverdue = daysUntilDue < 0
+
+        const payment: DuePayment = {
+          expenseId: expense.id,
+          name: expense.name,
+          amount: expense.amount,
+          dueDay: expense.dueDay,
+          paymentMethod: expense.paymentMethod,
+          year: y,
+          month: m,
+          isOverdue,
+          daysUntilDue,
+          recurrence: expense.recurrence,
+        }
+
+        if (isPaid) {
+          paid.push(payment)
+        } else {
+          unpaid.push(payment)
+        }
+      }
+    }
+  }
+
+  // Sort unpaid: most overdue first → (year, month, dueDay) ascending
+  unpaid.sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year
+    if (a.month !== b.month) return a.month - b.month
+    return a.dueDay - b.dueDay
+  })
+
+  // Sort paid: most recent first
+  paid.sort((a, b) => {
+    if (a.year !== b.year) return b.year - a.year
+    if (a.month !== b.month) return b.month - a.month
+    return b.dueDay - a.dueDay
+  })
+
+  return { unpaid, paid }
+}
 
 export async function getDashboardData(userId: string) {
   const now = new Date()
-  const currentDay = now.getDate()
-  const currentMonth = now.getMonth() + 1
 
   // ============================================
   // RECURRING EXPENSES
@@ -14,6 +131,17 @@ export async function getDashboardData(userId: string) {
     .select()
     .from(recurringExpenses)
     .where(and(eq(recurringExpenses.isActive, true), eq(recurringExpenses.userId, userId)))
+
+  // Fetch payment records for active expenses
+  const expenseIds = activeExpenses.map((e) => e.id)
+  const paidRecords = expenseIds.length > 0
+    ? await db
+        .select()
+        .from(paymentRecords)
+        .where(inArray(paymentRecords.expenseId, expenseIds))
+    : []
+
+  const { unpaid: duePayments, paid: paidPayments } = computeDuePayments(activeExpenses, paidRecords, now)
 
   const monthlyExpenses = activeExpenses.filter((e) => e.recurrence === 'monthly')
   const yearlyExpenses = activeExpenses.filter((e) => e.recurrence === 'yearly')
@@ -26,17 +154,6 @@ export async function getDashboardData(userId: string) {
     (sum, e) => sum + parseFloat(e.amount),
     0
   )
-
-  // Upcoming payments (next 7 days for monthly, this month for yearly)
-  const upcomingMonthly = monthlyExpenses.filter((e) => {
-    if (!e.dueDay) return false
-    const daysUntilDue = e.dueDay - currentDay
-    return daysUntilDue >= 0 && daysUntilDue <= 7
-  })
-
-  const upcomingYearly = yearlyExpenses.filter((e) => {
-    return e.dueMonth === currentMonth
-  })
 
   // ============================================
   // LOANS (from transactions)
@@ -96,23 +213,8 @@ export async function getDashboardData(userId: string) {
         asMonthly: yearlyTotal / 12,
       },
       effectiveMonthly: monthlyTotal + yearlyTotal / 12,
-      upcoming: {
-        monthly: upcomingMonthly.map((e) => ({
-          id: e.id,
-          name: e.name,
-          amount: e.amount,
-          dueDay: e.dueDay,
-          paymentMethod: e.paymentMethod,
-        })),
-        yearly: upcomingYearly.map((e) => ({
-          id: e.id,
-          name: e.name,
-          amount: e.amount,
-          dueDay: e.dueDay,
-          dueMonth: e.dueMonth,
-          paymentMethod: e.paymentMethod,
-        })),
-      },
+      duePayments,
+      paidPayments,
     },
     loans: {
       theyOweMe: totalTheyOweMe,

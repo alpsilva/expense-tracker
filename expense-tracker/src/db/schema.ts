@@ -6,6 +6,7 @@ import {
   boolean,
   integer,
   pgEnum,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
@@ -92,7 +93,7 @@ export const recurringExpenses = pgTable('recurring_expenses', {
   paymentMethod: paymentMethodEnum('payment_method').notNull(),
 
   // Due date info
-  dueDay: integer('due_day'),           // Day of month (1-31) when payment is due
+  dueDay: integer('due_day').notNull(),  // Day of month (1-31) when payment is due
   dueMonth: integer('due_month'),       // Month (1-12) for yearly expenses
 
   // Lifecycle
@@ -149,6 +150,24 @@ export const transactions = pgTable('transactions', {
 })
 
 // ============================================
+// PAYMENT RECORDS (tracking paid recurring expenses)
+// ============================================
+
+export const paymentRecords = pgTable('payment_records', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+
+  expenseId: text('expense_id').notNull().references(() => recurringExpenses.id, { onDelete: 'cascade' }),
+
+  year: integer('year').notNull(),
+  month: integer('month').notNull(),
+  paidAt: timestamp('paid_at', { withTimezone: true }).notNull(),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex('payment_records_expense_year_month_idx').on(table.expenseId, table.year, table.month),
+])
+
+// ============================================
 // RELATIONS
 // ============================================
 
@@ -157,11 +176,12 @@ export const usersRelations = relations(users, ({ many }) => ({
   people: many(people),
 }))
 
-export const recurringExpensesRelations = relations(recurringExpenses, ({ one }) => ({
+export const recurringExpensesRelations = relations(recurringExpenses, ({ one, many }) => ({
   user: one(users, {
     fields: [recurringExpenses.userId],
     references: [users.id],
   }),
+  paymentRecords: many(paymentRecords),
 }))
 
 export const peopleRelations = relations(people, ({ one, many }) => ({
@@ -176,6 +196,13 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   person: one(people, {
     fields: [transactions.personId],
     references: [people.id],
+  }),
+}))
+
+export const paymentRecordsRelations = relations(paymentRecords, ({ one }) => ({
+  expense: one(recurringExpenses, {
+    fields: [paymentRecords.expenseId],
+    references: [recurringExpenses.id],
   }),
 }))
 
@@ -194,3 +221,6 @@ export type NewPerson = typeof people.$inferInsert
 
 export type Transaction = typeof transactions.$inferSelect
 export type NewTransaction = typeof transactions.$inferInsert
+
+export type PaymentRecord = typeof paymentRecords.$inferSelect
+export type NewPaymentRecord = typeof paymentRecords.$inferInsert
