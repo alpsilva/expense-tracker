@@ -49,7 +49,7 @@ function groupByMonth(payments: DuePayment[]): Map<string, DuePayment[]> {
 
 export function DuePayments({ unpaid, paid }: DuePaymentsProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
   const [optimisticPaid, setOptimisticPaid] = useState<Set<string>>(new Set())
   const [optimisticUnpaid, setOptimisticUnpaid] = useState<Set<string>>(new Set())
   const [showPaid, setShowPaid] = useState(false)
