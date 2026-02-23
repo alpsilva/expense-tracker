@@ -51,8 +51,8 @@ function computeDuePayments(
       const mEnd = y === lastYear ? lastMonth : 12
 
       for (let m = mStart; m <= mEnd; m++) {
-        // Yearly expenses only apply in their dueMonth
-        if (expense.recurrence === 'yearly' && m !== expense.dueMonth) {
+        // Yearly expenses only apply in their dueMonth (fall back to startDate month)
+        if (expense.recurrence === 'yearly' && m !== (expense.dueMonth ?? startMonth)) {
           continue
         }
 
