@@ -43,7 +43,14 @@ function computeDuePayments(
 
     // Cap at current month
     const lastYear = Math.min(endYear, currentYear)
-    const lastMonth = lastYear < currentYear ? endMonth : Math.min(endMonth, currentMonth)
+    let lastMonth: number
+    if (endYear < currentYear) {
+      lastMonth = endMonth
+    } else if (endYear > currentYear) {
+      lastMonth = currentMonth
+    } else {
+      lastMonth = Math.min(endMonth, currentMonth)
+    }
 
     // Iterate through eligible months
     for (let y = startYear; y <= lastYear; y++) {
