@@ -75,6 +75,11 @@ export function DuePayments({ unpaid, paid }: DuePaymentsProps) {
   async function markAsPaid(payment: DuePayment) {
     const key = paymentKey(payment)
     setOptimisticPaid((prev) => new Set(prev).add(key))
+    setOptimisticUnpaid((prev) => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
 
     try {
       const res = await fetch(`/api/expenses/${payment.expenseId}/payments`, {
@@ -110,6 +115,11 @@ export function DuePayments({ unpaid, paid }: DuePaymentsProps) {
 
     const key = paymentKey(payment)
     setOptimisticUnpaid((prev) => new Set(prev).add(key))
+    setOptimisticPaid((prev) => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
 
     try {
       const res = await fetch(`/api/expenses/${payment.expenseId}/payments`, {
