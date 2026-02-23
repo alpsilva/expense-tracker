@@ -168,6 +168,48 @@
               ]
             }
           }
+        },
+        {
+          "name": "Mark Expense as Paid",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/:id/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", ":id", "payments"],
+              "variable": [
+                { "key": "id", "value": "EXPENSE_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2026,\n  \"month\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Unmark Expense Payment",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/:id/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", ":id", "payments"],
+              "variable": [
+                { "key": "id", "value": "EXPENSE_ID_HERE" }
+              ]
+            },
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"year\": 2026,\n  \"month\": 2\n}"
+            }
+          }
         }
       ]
     },

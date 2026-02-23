@@ -82,6 +82,14 @@ public/               # Static assets
 ### Recurring Expenses
 Track monthly and yearly recurring expenses with categories, payment methods, and due dates.
 
+### Monthly Payment Tracker
+Mark recurring expenses as paid each month from the dashboard:
+- **Data model:** `paymentRecords` table — absence of a record means unpaid
+- **Computed on load:** `computeDuePayments()` in `src/lib/queries/dashboard.ts` iterates active expenses × eligible months, cross-references payment records
+- **Dashboard:** Shows unpaid grouped by month (overdue highlighted in red, current month labeled), with collapsible paid section
+- **Optimistic UI:** Mark/unmark updates instantly with rollback on error
+- **Idempotent API:** Uses `onConflictDoNothing` for race-safe payment creation
+
 ### Loan Ledger
 People-first loan tracking system:
 - **Ledger model:** Each person has a ledger (list of transactions)
@@ -99,6 +107,8 @@ People-first loan tracking system:
 - `GET/PUT/DELETE /api/people/[id]` - Person details
 - `POST /api/people/[id]/transactions` - Create transaction
 - `PATCH /api/people/[id]/transactions/[txId]` - Update transaction (toggle disregard)
+- `POST /api/expenses/[id]/payments` - Mark expense as paid for a month
+- `DELETE /api/expenses/[id]/payments` - Unmark expense payment for a month
 
 ## API Patterns
 
