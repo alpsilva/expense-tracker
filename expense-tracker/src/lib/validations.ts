@@ -14,7 +14,7 @@ export const expenseSchema = z.object({
     'pix', 'credit_card', 'debit_card', 'boleto',
     'automatic_debit', 'bank_transfer', 'cash', 'other'
   ]),
-  dueDay: z.number().min(1).max(31).optional(),
+  dueDay: z.number().min(1).max(31),
   dueMonth: z.number().min(1).max(12).optional(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional(),

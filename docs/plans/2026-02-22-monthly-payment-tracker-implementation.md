@@ -101,7 +101,7 @@ Note: Keep `dueMonth` nullable — it's only meaningful for yearly expenses.
 
 **Step 3: Generate migration**
 
-Run: `cd /Users/alpsilva/projects/expense-tracker/expense-tracker && pnpm db:generate`
+Run: `cd expense-tracker && pnpm db:generate`
 
 **Step 4: Edit the generated migration SQL**
 
@@ -115,7 +115,7 @@ UPDATE "recurring_expenses" SET "due_day" = 1 WHERE "due_day" IS NULL;
 
 **Step 5: Apply migration locally**
 
-Run: `cd /Users/alpsilva/projects/expense-tracker/expense-tracker && pnpm db:migrate`
+Run: `cd expense-tracker && pnpm db:migrate`
 
 Verify it succeeds without errors.
 
@@ -548,7 +548,7 @@ const paymentMethodIcons: Record<string, string> = {
 }
 
 const monthNames = [
-  '', 'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+  '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 
@@ -1010,7 +1010,7 @@ rm expense-tracker/src/components/dashboard/upcoming-payments.tsx
 
 **Step 3: Build check**
 
-Run: `cd /Users/alpsilva/projects/expense-tracker/expense-tracker && pnpm build`
+Run: `cd expense-tracker && pnpm build`
 
 Expected: Build succeeds without errors.
 
@@ -1028,7 +1028,7 @@ git commit -m "chore: remove unused UpcomingPayments component"
 **Step 1: Run lint**
 
 ```bash
-cd /Users/alpsilva/projects/expense-tracker/expense-tracker && pnpm lint
+cd expense-tracker && pnpm lint
 ```
 
 Fix any lint errors.
@@ -1036,7 +1036,7 @@ Fix any lint errors.
 **Step 2: Run build**
 
 ```bash
-cd /Users/alpsilva/projects/expense-tracker/expense-tracker && pnpm build
+cd expense-tracker && pnpm build
 ```
 
 Verify build passes.
