@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { db } from '@/db'
 import { recurringExpenses, paymentRecords } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
@@ -6,6 +7,34 @@ import { getAuthUserId, unauthorizedResponse } from '@/lib/api-auth'
 
 type RouteContext = {
   params: Promise<{ id: string }>
+}
+
+const paymentSchema = z.object({
+  year: z.coerce.number().int().min(2000).max(2100),
+  month: z.coerce.number().int().min(1).max(12),
+})
+
+function validatePaymentBody(body: unknown) {
+  const result = paymentSchema.safeParse(body)
+  if (!result.success) {
+    return {
+      error: NextResponse.json(
+        { error: 'Validation failed.', details: result.error.flatten().fieldErrors },
+        { status: 400 }
+      ),
+    }
+  }
+  return { data: result.data }
+}
+
+async function parseJsonBody(request: NextRequest) {
+  try {
+    return { body: await request.json() as unknown }
+  } catch {
+    return {
+      error: NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 }),
+    }
+  }
 }
 
 // POST /api/expenses/:id/payments — Mark expense as paid for a month
@@ -17,25 +46,13 @@ export async function POST(
   if (!userId) return unauthorizedResponse()
 
   const { id: expenseId } = await context.params
-  const body = await request.json()
 
-  // Validate year
-  const year = Number(body.year)
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-    return NextResponse.json(
-      { error: 'Invalid year.' },
-      { status: 400 }
-    )
-  }
+  const json = await parseJsonBody(request)
+  if ('error' in json) return json.error
 
-  // Validate month
-  const month = Number(body.month)
-  if (!Number.isInteger(month) || month < 1 || month > 12) {
-    return NextResponse.json(
-      { error: 'Invalid month. Must be 1-12.' },
-      { status: 400 }
-    )
-  }
+  const validated = validatePaymentBody(json.body)
+  if ('error' in validated) return validated.error
+  const { year, month } = validated.data
 
   // Verify expense belongs to user
   const [expense] = await db
@@ -84,25 +101,13 @@ export async function DELETE(
   if (!userId) return unauthorizedResponse()
 
   const { id: expenseId } = await context.params
-  const body = await request.json()
 
-  // Validate year
-  const year = Number(body.year)
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-    return NextResponse.json(
-      { error: 'Invalid year.' },
-      { status: 400 }
-    )
-  }
+  const json = await parseJsonBody(request)
+  if ('error' in json) return json.error
 
-  // Validate month
-  const month = Number(body.month)
-  if (!Number.isInteger(month) || month < 1 || month > 12) {
-    return NextResponse.json(
-      { error: 'Invalid month. Must be 1-12.' },
-      { status: 400 }
-    )
-  }
+  const validated = validatePaymentBody(json.body)
+  if ('error' in validated) return validated.error
+  const { year, month } = validated.data
 
   // Verify expense belongs to user
   const [expense] = await db
