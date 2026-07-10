@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import { TransactionForm } from '@/components/ledger/transaction-form'
+import { LoanExportActions } from '@/components/ledger/loan-export-actions'
 
 interface Transaction {
   id: string
@@ -112,9 +113,12 @@ export default function LedgerDetailPage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Quick actions */}
-      <div className="flex gap-2">
-        <Button onClick={() => setLentOpen(true)}>+ Emprestei</Button>
-        <Button onClick={() => setReceivedOpen(true)}>+ Recebi</Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setLentOpen(true)}>+ Emprestei</Button>
+          <Button onClick={() => setReceivedOpen(true)}>+ Recebi</Button>
+        </div>
+        <LoanExportActions person={person} />
       </div>
 
       {/* Contact info */}
