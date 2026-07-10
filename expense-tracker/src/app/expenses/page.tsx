@@ -2,8 +2,13 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { ExpensesSection } from '@/components/expenses/expenses-section'
+import { ExpensesSection, InactiveExpensesSection } from '@/components/expenses/expenses-section'
 import { getExpensesList } from '@/lib/queries/expenses'
+import type { RecurringExpense } from '@/db/schema'
+
+function getTotal(expenses: RecurringExpense[]) {
+  return expenses.reduce((sum, expense) => sum + parseFloat(expense.amount), 0)
+}
 
 export default async function ExpensesPage() {
   const cookieStore = await cookies()
@@ -14,6 +19,15 @@ export default async function ExpensesPage() {
   }
 
   const data = await getExpensesList(userId)
+  const activeMonthly = data.expenses.monthly.filter((expense) => expense.isActive)
+  const activeYearly = data.expenses.yearly.filter((expense) => expense.isActive)
+  const inactiveExpenses = [
+    ...data.expenses.monthly,
+    ...data.expenses.yearly,
+  ].filter((expense) => !expense.isActive)
+
+  const hasActiveExpenses = activeMonthly.length > 0 || activeYearly.length > 0
+  const hasAnyExpenses = hasActiveExpenses || inactiveExpenses.length > 0
 
   return (
     <div className="space-y-6">
@@ -27,17 +41,23 @@ export default async function ExpensesPage() {
       <div className="space-y-6">
         <ExpensesSection
           title="Despesas Mensais"
-          expenses={data.expenses.monthly}
-          total={data.totals.monthly}
+          expenses={activeMonthly}
+          total={getTotal(activeMonthly)}
         />
         <ExpensesSection
           title="Despesas Anuais"
-          expenses={data.expenses.yearly}
-          total={data.totals.yearly}
+          expenses={activeYearly}
+          total={getTotal(activeYearly)}
         />
       </div>
 
-      {data.expenses.monthly.length === 0 && data.expenses.yearly.length === 0 && (
+      {!hasActiveExpenses && inactiveExpenses.length > 0 && (
+        <div className="rounded-md border border-dashed bg-muted/30 p-6 text-center text-muted-foreground">
+          Nenhuma despesa ativa.
+        </div>
+      )}
+
+      {!hasAnyExpenses && (
         <div className="text-center py-12 text-muted-foreground">
           <p>Nenhuma despesa cadastrada.</p>
           <Link href="/expenses/new" className="text-primary hover:underline">
@@ -45,6 +65,8 @@ export default async function ExpensesPage() {
           </Link>
         </div>
       )}
+
+      <InactiveExpensesSection expenses={inactiveExpenses} />
     </div>
   )
 }
