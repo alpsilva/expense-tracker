@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +14,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Archive, RotateCcw } from 'lucide-react'
 import type { RecurringExpense } from '@/db/schema'
+import { formatCurrency, formatDate, formatDueDate, paymentMethodLabels, categoryLabels } from '@/lib/formatters'
 
 const categories = [
   { value: 'subscription', label: 'Assinatura' },
@@ -44,9 +54,21 @@ interface ExpenseFormProps {
   onSuccess?: () => void
 }
 
+function ReadOnlyRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="max-w-[65%] text-right font-medium">{children}</span>
+    </div>
+  )
+}
+
 export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [lifecycleLoading, setLifecycleLoading] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [formData, setFormData] = useState({
     name: expense?.name ?? '',
@@ -66,6 +88,7 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError(null)
 
     try {
       const payload = {
@@ -89,10 +112,113 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
         onSuccess?.()
         router.push('/expenses')
         router.refresh()
+        return
       }
+
+      setError('Não foi possível salvar a despesa. Tente novamente.')
+    } catch {
+      setError('Não foi possível salvar a despesa. Tente novamente.')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleLifecycleChange(isActive: boolean) {
+    if (!expense) return
+
+    setLifecycleLoading(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/expenses/${expense.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive }),
+      })
+
+      if (!res.ok) {
+        setError(
+          isActive
+            ? 'Não foi possível reativar a despesa. Tente novamente.'
+            : 'Não foi possível arquivar a despesa. Tente novamente.'
+        )
+        return
+      }
+
+      onSuccess?.()
+      router.push('/expenses')
+      router.refresh()
+    } catch {
+      setError(
+        isActive
+          ? 'Não foi possível reativar a despesa. Tente novamente.'
+          : 'Não foi possível arquivar a despesa. Tente novamente.'
+      )
+    } finally {
+      setLifecycleLoading(false)
+      setArchiveOpen(false)
+    }
+  }
+
+  if (expense && !expense.isActive) {
+    return (
+      <Card className="border-dashed bg-muted/30 shadow-none">
+        <CardHeader>
+          <CardTitle>Despesa Inativa</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h1 className="text-2xl font-bold">{expense.name}</h1>
+            {expense.description && (
+              <p className="text-muted-foreground">{expense.description}</p>
+            )}
+          </div>
+
+          <div className="space-y-3 rounded-md border bg-background p-4">
+            <ReadOnlyRow label="Valor">{formatCurrency(expense.amount)}</ReadOnlyRow>
+            <ReadOnlyRow label="Recorrência">
+              {expense.recurrence === 'monthly' ? 'Mensal' : 'Anual'}
+            </ReadOnlyRow>
+            <ReadOnlyRow label="Vencimento">
+              {formatDueDate(expense.dueDay, expense.dueMonth ?? undefined)}
+            </ReadOnlyRow>
+            <ReadOnlyRow label="Categoria">{categoryLabels[expense.category]}</ReadOnlyRow>
+            <ReadOnlyRow label="Pagamento">{paymentMethodLabels[expense.paymentMethod]}</ReadOnlyRow>
+            <ReadOnlyRow label="Início">{formatDate(expense.startDate)}</ReadOnlyRow>
+          </div>
+
+          {(expense.notes || expense.url) && (
+            <div className="space-y-3 rounded-md border bg-background p-4 text-sm">
+              {expense.notes && (
+                <div>
+                  <p className="font-medium">Observações</p>
+                  <p className="text-muted-foreground">{expense.notes}</p>
+                </div>
+              )}
+              {expense.url && (
+                <div>
+                  <p className="font-medium">URL</p>
+                  <p className="break-all text-muted-foreground">{expense.url}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="pt-2">
+            <Button
+              type="button"
+              onClick={() => handleLifecycleChange(true)}
+              disabled={lifecycleLoading}
+            >
+              <RotateCcw />
+              {lifecycleLoading ? 'Reativando...' : 'Reativar'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -256,15 +382,66 @@ export function ExpenseForm({ expense, onSuccess }: ExpenseFormProps) {
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : expense ? 'Atualizar' : 'Criar'}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.back()}>
-              Cancelar
-            </Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-2">
+              <Button type="submit" disabled={loading || lifecycleLoading}>
+                {loading ? 'Salvando...' : expense ? 'Atualizar' : 'Criar'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={loading || lifecycleLoading}
+              >
+                Cancelar
+              </Button>
+            </div>
+
+            {expense && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setArchiveOpen(true)}
+                disabled={loading || lifecycleLoading}
+              >
+                <Archive />
+                Arquivar Despesa
+              </Button>
+            )}
           </div>
         </form>
+
+        {expense && (
+          <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Arquivar despesa?</DialogTitle>
+                <DialogDescription>
+                  {expense.name} deixará de aparecer nas despesas recorrentes ativas e nos pagamentos pendentes, mas o histórico será preservado.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setArchiveOpen(false)}
+                  disabled={lifecycleLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleLifecycleChange(false)}
+                  disabled={lifecycleLoading}
+                >
+                  <Archive />
+                  {lifecycleLoading ? 'Arquivando...' : 'Arquivar'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   )

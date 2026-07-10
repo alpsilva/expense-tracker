@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDueDate, paymentMethodLabels, categoryLabels } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import type { RecurringExpense } from '@/db/schema'
 
 const paymentMethodIcons: Record<string, string> = {
@@ -24,13 +25,19 @@ interface ExpenseCardProps {
 export function ExpenseCard({ expense, onClick }: ExpenseCardProps) {
   return (
     <Card
-      className={`cursor-pointer hover:bg-accent/50 transition-colors ${!expense.isActive ? 'opacity-60' : ''}`}
+      className={cn(
+        'cursor-pointer transition-colors hover:bg-accent/50',
+        !expense.isActive && 'border-dashed bg-muted/50 text-muted-foreground shadow-none hover:bg-muted/70'
+      )}
       onClick={onClick}
     >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-base">{expense.name}</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-base">{expense.name}</CardTitle>
+              {!expense.isActive && <Badge variant="secondary">Inativa</Badge>}
+            </div>
             {expense.description && (
               <p className="text-sm text-muted-foreground">{expense.description}</p>
             )}

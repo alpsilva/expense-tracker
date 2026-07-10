@@ -67,6 +67,37 @@ export async function PUT(
   return NextResponse.json(expense)
 }
 
+// PATCH /api/expenses/:id
+export async function PATCH(
+  request: NextRequest,
+  context: RouteContext
+) {
+  const userId = await getAuthUserId()
+  if (!userId) return unauthorizedResponse()
+
+  const { id } = await context.params
+  const body = await request.json()
+
+  if (typeof body.isActive !== 'boolean') {
+    return NextResponse.json({ error: 'isActive must be a boolean' }, { status: 400 })
+  }
+
+  const [expense] = await db
+    .update(recurringExpenses)
+    .set({
+      isActive: body.isActive,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(recurringExpenses.id, id), eq(recurringExpenses.userId, userId)))
+    .returning()
+
+  if (!expense) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
+  return NextResponse.json(expense)
+}
+
 // DELETE /api/expenses/:id
 export async function DELETE(
   _request: NextRequest,
