@@ -121,7 +121,7 @@ function getExportGroups(expenses: ExportExpense[], scope: ExpenseExportScope) {
         kind: 'yearly' as const,
         expenses: expenses.filter((expense) => expense.recurrence === 'yearly'),
       },
-    ]
+    ].filter((group) => group.expenses.length > 0)
   }
 
   if (scope === 'monthly') {
