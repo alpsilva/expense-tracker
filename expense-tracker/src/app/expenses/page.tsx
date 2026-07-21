@@ -2,6 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { ExpenseExportActions } from '@/components/expenses/expense-export-actions'
 import { ExpensesSection, InactiveExpensesSection } from '@/components/expenses/expenses-section'
 import { getExpensesList } from '@/lib/queries/expenses'
 import type { RecurringExpense } from '@/db/schema'
@@ -25,17 +26,24 @@ export default async function ExpensesPage() {
     ...data.expenses.monthly,
     ...data.expenses.yearly,
   ].filter((expense) => !expense.isActive)
+  const exportExpenses = [
+    ...data.expenses.monthly,
+    ...data.expenses.yearly,
+  ]
 
   const hasActiveExpenses = activeMonthly.length > 0 || activeYearly.length > 0
   const hasAnyExpenses = hasActiveExpenses || inactiveExpenses.length > 0
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold">Despesas Recorrentes</h1>
-        <Link href="/expenses/new">
-          <Button>+ Nova Despesa</Button>
-        </Link>
+        <div className="flex flex-wrap items-start gap-2">
+          <ExpenseExportActions expenses={exportExpenses} />
+          <Link href="/expenses/new">
+            <Button>+ Nova Despesa</Button>
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-6">
