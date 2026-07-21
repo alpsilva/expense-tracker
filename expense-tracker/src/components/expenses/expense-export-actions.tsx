@@ -55,6 +55,8 @@ export function ExpenseExportActions({ expenses }: ExpenseExportActionsProps) {
     setError(null)
 
     try {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+
       if (kind === 'csv') {
         downloadExpensesCsv(expenses, scope)
       } else {
