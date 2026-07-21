@@ -89,18 +89,18 @@ export function ExpenseExportActions({ expenses }: ExpenseExportActionsProps) {
 
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-md border bg-popover p-3 text-popover-foreground shadow-md"
+          className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-md border bg-popover p-5 text-popover-foreground shadow-md"
           role="dialog"
           aria-label="Exportar despesas"
         >
-          <div className="space-y-3">
-            <label className="space-y-1.5 text-sm font-medium">
+          <div className="space-y-5">
+            <label className="flex flex-col gap-2 text-sm font-medium">
               <span>Despesas</span>
               <select
                 value={scope}
                 onChange={(event) => setScope(event.target.value as ExpenseExportScope)}
                 disabled={disabled}
-                className="border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="all">{scopeLabels.all}</option>
                 <option value="monthly">{scopeLabels.monthly}</option>
@@ -108,10 +108,11 @@ export function ExpenseExportActions({ expenses }: ExpenseExportActionsProps) {
               </select>
             </label>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <Button
                 type="button"
                 variant="outline"
+                className="h-10"
                 onClick={() => handleExport('csv')}
                 disabled={disabled}
               >
@@ -121,6 +122,7 @@ export function ExpenseExportActions({ expenses }: ExpenseExportActionsProps) {
               <Button
                 type="button"
                 variant="outline"
+                className="h-10"
                 onClick={() => handleExport('xlsx')}
                 disabled={disabled}
               >
